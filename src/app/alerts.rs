@@ -31,6 +31,7 @@ pub struct Alerts {
     seen_any: bool,
     quiet_frames: u32,
     frames: u32,
+    #[cfg_attr(not(windows), allow(dead_code))]
     placed: bool,
     size: (f32, f32),
     demo: bool,

@@ -106,6 +106,7 @@ impl Hotkey {
         (self.ctrl || self.alt || self.shift || self.win || f_key) && table(&self.key).is_some()
     }
 
+    #[cfg_attr(not(windows), allow(dead_code))]
     pub fn vk(&self) -> Option<u32> {
         table(&self.key).map(|t| t.0)
     }
@@ -116,6 +117,7 @@ impl Hotkey {
     }
 
     /// `MOD_*` flags of `RegisterHotKey`.
+    #[cfg_attr(not(windows), allow(dead_code))]
     pub fn win_modifiers(&self) -> u32 {
         (self.alt as u32) | (self.ctrl as u32) << 1 | (self.shift as u32) << 2 | (self.win as u32) << 3
     }

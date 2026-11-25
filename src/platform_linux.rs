@@ -27,8 +27,8 @@ fn autostart_file() -> Option<PathBuf> {
 fn exec_quote(path: &str) -> String {
     let mut s = String::from("\"");
     for c in path.chars() {
-        if matches!(c, '"' | '`' | '$' | '\') {
-            s.push('\');
+        if matches!(c, '"' | '`' | '$' | '\\') {
+            s.push('\\');
         }
         s.push(c);
     }
@@ -98,7 +98,7 @@ mod tests {
     fn autostart_entry_quotes_the_path() {
         let e = entry("/opt/my apps/Remindo");
         assert!(e.contains("Exec=\"/opt/my apps/Remindo\" --background\n"));
-        assert_eq!(exec_quote("/a\"b$c"), "\"/a\\\"b\$c\"");
+        assert_eq!(exec_quote("/a\"b$c"), "\"/a\\\"b\\$c\"");
     }
 
     #[test]

@@ -26,6 +26,7 @@ pub struct Popup {
     had_focus: bool,
     demo: bool,
     shot: Option<Shot>,
+    #[cfg_attr(not(windows), allow(dead_code))]
     placed_at: Option<(i32, i32, i32, i32)>,
 }
 

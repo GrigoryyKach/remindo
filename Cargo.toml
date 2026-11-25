@@ -1,6 +1,6 @@
 [package]
 name = "remindo"
-version = "1.0.0"
+version = "1.0.1"
 edition = "2021"
 build = "build.rs"
 description = "Quick timers from a hotkey: type \"in 15 minutes turn off the stove\" and get a reminder"

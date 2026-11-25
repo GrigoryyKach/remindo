@@ -4,6 +4,7 @@
 //! endpoint doubles as the single-instance lock: `serve` fails when another process of the same role (and the
 //! same data folder) already serves it. A test instance with its own `REMINDO_DATA_DIR` never meets the real one.
 
+#[allow(unused_imports)]
 use std::time::{Duration, Instant};
 
 /// Stable per-data-folder suffix, so different data folders (and users) never share an endpoint.

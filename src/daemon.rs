@@ -35,6 +35,7 @@ static WAKE: (Mutex<bool>, Condvar) = (Mutex::new(false), Condvar::new());
 /// Registering the real shortcut is skipped in a test instance, unless `REMINDO_TEST_HOTKEY=1`.
 static HOTKEY_LIVE: AtomicBool = AtomicBool::new(true);
 
+#[cfg_attr(not(windows), allow(dead_code))]
 pub fn native_popup() -> bool {
     NATIVE.load(Ordering::Relaxed)
 }
