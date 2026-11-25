@@ -133,10 +133,15 @@ pub fn icon(p: &Painter, ic: Icon, c: Pos2, size: f32, col: Color32) {
             p.rect_stroke(Rect::from_min_max(c + vec2(-s * 0.5, -s * 0.5), c + vec2(s * 0.5, s * 0.85)), 2.0, st, StrokeKind::Inside);
         }
         Icon::Edit => {
-            line(c + vec2(-s * 0.7, s * 0.7), c + vec2(s * 0.6, -s * 0.6));
-            line(c + vec2(-s * 0.7, s * 0.7), c + vec2(-s * 0.7, s * 0.3));
-            line(c + vec2(-s * 0.7, s * 0.7), c + vec2(-s * 0.3, s * 0.7));
-            line(c + vec2(s * 0.2, -s * 0.8), c + vec2(s * 0.8, -s * 0.2));
+            // A pencil: a slanted body with a tip and a cap line.
+            let d = vec2(0.7071, -0.7071);
+            let n = vec2(0.7071, 0.7071) * (s * 0.26);
+            let tip = c + vec2(-0.78, 0.78) * s;
+            let shoulder = tip + d * (s * 0.5);
+            let end = tip + d * (s * 1.75);
+            p.add(Shape::closed_line(vec![tip, shoulder + n, end + n, end - n, shoulder - n], st));
+            line(shoulder + n, shoulder - n);
+            line(end + n - d * (s * 0.3), end - n - d * (s * 0.3));
         }
         Icon::Clock => {
             p.circle_stroke(c, s * 0.82, st);

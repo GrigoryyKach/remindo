@@ -22,6 +22,7 @@ mod ipc;
 #[allow(dead_code)]
 mod nimvoro;
 mod parse;
+mod preview;
 #[allow(dead_code)]
 mod selfupdate;
 mod sound;
@@ -43,6 +44,8 @@ mod tray;
 #[cfg(not(windows))]
 #[path = "tray_linux.rs"]
 mod tray;
+#[cfg(windows)]
+mod nativepopup;
 #[cfg(windows)]
 mod winloop;
 #[cfg(unix)]
@@ -69,7 +72,7 @@ fn main() {
         return;
     }
     if has("--background") || has("--minimized") {
-        daemon::run(dir);
+        daemon::run(dir, !has("--popup-egui"));
         return;
     }
     let result = if has("--new") {

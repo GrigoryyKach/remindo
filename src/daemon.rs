@@ -28,10 +28,16 @@ pub struct Daemon {
 
 static STATE: OnceLock<Mutex<Daemon>> = OnceLock::new();
 static QUIT: AtomicBool = AtomicBool::new(false);
+/// The popup is the native Win32 window in this process (Windows, unless `--popup-egui`).
+static NATIVE: AtomicBool = AtomicBool::new(false);
 static FIRST_TICK: AtomicBool = AtomicBool::new(true);
 static WAKE: (Mutex<bool>, Condvar) = (Mutex::new(false), Condvar::new());
 /// Registering the real shortcut is skipped in a test instance, unless `REMINDO_TEST_HOTKEY=1`.
 static HOTKEY_LIVE: AtomicBool = AtomicBool::new(true);
+
+pub fn native_popup() -> bool {
+    NATIVE.load(Ordering::Relaxed)
+}
 
 pub fn now_ms() -> i64 {
     std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_millis() as i64).unwrap_or(0)
@@ -79,6 +85,11 @@ fn spawn(args: &[&str]) {
 
 /// Opens the quick input, or brings the open one forward. Never opens a second one.
 pub fn open_popup() {
+    #[cfg(windows)]
+    if native_popup() {
+        crate::winloop::post_show_popup();
+        return;
+    }
     platform::allow_foreground();
     if ipc::request("popup", "focus").is_some() {
         return;
@@ -232,7 +243,7 @@ pub fn next_clock_ms(now_ms: i64, h: u32, m: u32) -> i64 {
     now_ms + 60_000
 }
 
-fn update_tray() {
+pub fn update_tray() {
     if let Some(s) = with(|d| d.tray_state()) {
         tray::update(s);
     }
@@ -418,8 +429,19 @@ fn rebind(h: &Hotkey) -> Result<(), String> {
 // ───────────────────────── process entry ─────────────────────────
 
 /// Runs the daemon until Exit. Returns at once when another daemon already runs for this data folder.
-pub fn run(dir: PathBuf) {
+pub fn run(dir: PathBuf, native: bool) {
+    NATIVE.store(native && cfg!(windows), Ordering::Relaxed);
     let mut cfg = Config::load_from(&dir);
+    if config::is_test_instance() {
+        if let Ok(l) = std::env::var("REMINDO_LANG") {
+            cfg.language = Some(l);
+        }
+        match std::env::var("REMINDO_THEME").as_deref() {
+            Ok("dark") => cfg.theme = crate::theme::ThemeMode::Dark,
+            Ok("light") => cfg.theme = crate::theme::ThemeMode::Light,
+            _ => {}
+        }
+    }
     let (store, note) = Store::load(&dir);
     if !ipc::serve("daemon", handle) {
         return;
@@ -450,6 +472,17 @@ pub fn run(dir: PathBuf) {
         ensure_alerts();
     }
     let live = HOTKEY_LIVE.load(Ordering::Relaxed);
+    #[cfg(windows)]
+    if config::is_test_instance() {
+        if let Ok(path) = std::env::var("REMINDO_NATIVE_SHOT") {
+            let text = std::env::var("REMINDO_SHOT_TEXT").unwrap_or_default();
+            crate::nativepopup::request_shot(path, text);
+            std::thread::spawn(|| {
+                std::thread::sleep(Duration::from_millis(800));
+                crate::winloop::post_show_popup();
+            });
+        }
+    }
     let on_ready = move |hotkey_result: Result<(), String>| {
         with(|d| d.hotkey_error = hotkey_result.err());
         if let Some(s) = with(|d| d.tray_state()) {

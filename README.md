@@ -57,12 +57,12 @@ Remindo is one executable that runs as several short processes:
 
 | Process | Started | What it does |
 |---|---|---|
-| **Daemon** (`--background`) | With the system, or when you open Remindo | Owns the timers, the global shortcut and the tray icon, runs the scheduler, plays the chime, starts the windows. Draws nothing: about 14 MB. |
-| **Quick input** (`--popup`) | By the shortcut | Parses what you type, shows the preview, hands the timer to the daemon. Exits when closed. |
+| **Daemon** (`--background`) | With the system, or when you open Remindo | Owns the timers, the global shortcut and the tray icon, runs the scheduler, plays the chime, starts the windows. Draws no window except the native quick input: about 14 MB idle, 19 MB after the input has been shown. |
+| **Quick input** | By the shortcut | On Windows a native Win32 window inside the daemon, created hidden at start and only shown: about 4 ms from the shortcut to a focused input, so no keystroke is lost. On Linux, and with `--popup-egui`, the egui window `--popup` (a separate process, about a third of a second to open). |
 | **Finished timers** (`--alerts`) | By the daemon when a timer fires | Stacks a card per timer that fired. Exits when the last one is closed. |
 | **Settings** (default, or `--settings`) | By the tray, or when you open Remindo | Lists the active timers and the history, edits options. Exits when closed. |
 
-They talk over a small named pipe (Windows) or Unix socket (Linux), one line in and one line out. Closing a window never stops the daemon; the tray's Exit does. The daemon draws no window and renders nothing, which is why it is light. The windows are separate processes and start in about a third of a second; a hidden resident window would answer faster but costs about 90 MB, so it was not kept.
+They talk over a small named pipe (Windows) or Unix socket (Linux), one line in and one line out. Closing a window never stops the daemon; the tray's Exit does. The finished-timer window and Settings are separate processes (egui), so they cost nothing while closed. The quick input is the exception: an egui process costs about 90 MB and 0.33 s to open, so on Windows it is a small GDI window with an EDIT control in the daemon (IBM Plex loaded privately, the same preview line from `src/parse`).
 
 ## The shortcut
 

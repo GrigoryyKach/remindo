@@ -7,7 +7,7 @@ use crate::config::{self, Config};
 use crate::i18n::Lang;
 use crate::strings::{self, S};
 use crate::theme::{self, Btn, Pal};
-use crate::{fmt, ipc, parse};
+use crate::ipc;
 #[cfg(windows)]
 use crate::platform;
 use eframe::egui::{self, Align2, Key, Margin, Modifiers, Rect, Stroke, StrokeKind, TextEdit, Ui, pos2, vec2};
@@ -34,6 +34,13 @@ fn last_path(dir: &std::path::Path) -> PathBuf {
 }
 
 impl Popup {
+    fn preview_line(&self) -> (String, bool, bool) {
+        match &self.error {
+            Some(e) => (e.clone(), true, false),
+            None => crate::preview::line(&self.text, self.lang),
+        }
+    }
+
     pub fn new(cc: &eframe::CreationContext<'_>, mut cfg: Config, dir: PathBuf) -> Self {
         let lang = super::setup(cc, &mut cfg);
         bus::init(cc.egui_ctx.clone());
@@ -69,54 +76,8 @@ impl Popup {
             let _ = config::write_atomic(&last_path(&self.dir), text.as_bytes());
             return true;
         }
-        self.error = Some(
-            match v.get("err").and_then(|e| e.as_str()).unwrap_or("") {
-                "no_time" | "empty" => t.hint_no_time,
-                "no_unit" => t.hint_no_unit,
-                "zero" => t.hint_zero,
-                "bad_clock" => t.hint_bad_clock,
-                "too_many" => t.too_many,
-                _ => t.add_failed,
-            }
-            .to_string(),
-        );
+        self.error = Some(crate::preview::error_text(v.get("err").and_then(|e| e.as_str()).unwrap_or(""), t).to_string());
         false
-    }
-
-    /// The preview line: what the text means, or why it does not parse yet. `(text, is_warning)`.
-    fn preview(&self) -> (String, bool, bool) {
-        let t = self.s();
-        if let Some(e) = &self.error {
-            return (e.clone(), true, false);
-        }
-        let now = chrono::Local::now().naive_local();
-        match parse::parse(&self.text, now, self.lang) {
-            Ok(p) => {
-                let when = fmt::when_naive(p.fire_at, now, p.lang);
-                let label = p.label_or_default();
-                let len = fmt::dur(p.secs, self.lang);
-                let mut line = if p.absolute { format!("{when}  ·  «{label}»  ·  {}", t.in_time.replace("{d}", &len)) } else { format!("{len}  ·  «{label}»  ·  {when}") };
-                let mut warn = false;
-                for n in &p.notes {
-                    match n {
-                        parse::Note::ClampedMax => {
-                            line.push_str(&format!("  ·  {}", t.hint_clamped));
-                            warn = true;
-                        }
-                        parse::Note::IgnoredSecond(s) => {
-                            line.push_str(&format!("  ·  {}", t.hint_ignored.replace("{t}", s)));
-                            warn = true;
-                        }
-                        parse::Note::Tomorrow => {}
-                    }
-                }
-                (line, warn, true)
-            }
-            Err(parse::Error::Empty) | Err(parse::Error::NoTime) => (t.hint_no_time.to_string(), false, false),
-            Err(parse::Error::NoUnit) => (t.hint_no_unit.to_string(), true, false),
-            Err(parse::Error::Zero) => (t.hint_zero.to_string(), true, false),
-            Err(parse::Error::BadClock) => (t.hint_bad_clock.to_string(), true, false),
-        }
     }
 }
 
@@ -214,7 +175,7 @@ impl eframe::App for Popup {
         }
 
         // The preview line.
-        let (line, warn, ok) = self.preview();
+        let (line, warn, ok) = self.preview_line();
         let prev = Rect::from_min_size(pos2(inner.left() + 4.0, field.bottom() + 8.0), vec2(inner.width() - 8.0, 18.0));
         let col = if warn { p.warning } else if ok { p.text2 } else { p.muted };
         let font = theme::reg(13.5);

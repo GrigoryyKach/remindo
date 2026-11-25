@@ -18,6 +18,7 @@ const WM_APP: u32 = 0x8000;
 const WM_QUIT_REQUEST: u32 = WM_APP + 1;
 const WM_TRAY_REFRESH: u32 = WM_APP + 2;
 const WM_REBIND: u32 = WM_APP + 3;
+const WM_SHOW_POPUP: u32 = WM_APP + 4;
 const PBT_APMRESUMESUSPEND: usize = 0x0007;
 const PBT_APMRESUMEAUTOMATIC: usize = 0x0012;
 const ERROR_HOTKEY_ALREADY_REGISTERED: u32 = 1409;
@@ -49,7 +50,16 @@ unsafe extern "system" fn wndproc(hwnd: HWND, msg: u32, wp: WPARAM, lp: LPARAM) 
         WM_HOTKEY => {
             // The process just got the foreground right from the keypress: hand it to the window we are about to open.
             crate::platform::allow_foreground();
-            crate::daemon::open_popup_async();
+            if crate::nativepopup::is_ready() {
+                // The popup lives in this process: no process to start, the keyboard is ours already.
+                crate::nativepopup::show();
+            } else {
+                crate::daemon::open_popup_async();
+            }
+            0
+        }
+        WM_SHOW_POPUP => {
+            crate::nativepopup::show();
             0
         }
         WM_POWERBROADCAST => {
@@ -95,6 +105,8 @@ unsafe extern "system" fn wndproc(hwnd: HWND, msg: u32, wp: WPARAM, lp: LPARAM) 
 pub fn run(hotkey: Option<Hotkey>, setup: impl FnOnce(Result<(), String>)) {
     // SAFETY: standard window creation on this thread; the class and title are NUL-terminated.
     unsafe {
+        // Per-monitor DPI, so the native popup is sharp and the right size on every monitor.
+        windows_sys::Win32::UI::HiDpi::SetProcessDpiAwarenessContext(windows_sys::Win32::UI::HiDpi::DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
         let hinst = GetModuleHandleW(std::ptr::null());
         let class = wide("RemindoDaemonWindow");
         let wc = WNDCLASSW { lpfnWndProc: Some(wndproc), hInstance: hinst, lpszClassName: class.as_ptr(), ..std::mem::zeroed() };
@@ -107,6 +119,9 @@ pub fn run(hotkey: Option<Hotkey>, setup: impl FnOnce(Result<(), String>)) {
             return;
         }
         MAIN_HWND.store(hwnd as isize, Ordering::Relaxed);
+        if crate::daemon::native_popup() {
+            crate::nativepopup::init();
+        }
         let result = match &hotkey {
             Some(h) => {
                 let r = register(hwnd, 1, h);
@@ -142,6 +157,10 @@ fn post(msg: u32) {
 
 pub fn post_quit() {
     post(WM_QUIT_REQUEST);
+}
+
+pub fn post_show_popup() {
+    post(WM_SHOW_POPUP);
 }
 
 pub fn request_tray_refresh() {

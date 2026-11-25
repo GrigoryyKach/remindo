@@ -29,7 +29,7 @@ def make_env(data, **extra):
 
 
 def ipc(env, *a):
-    r = subprocess.run([exe, "--ipc", *a], env=env, capture_output=True, text=True, timeout=15)
+    r = subprocess.run([exe, "--ipc", *a], env=env, capture_output=True, text=True, encoding="utf-8", timeout=15)
     return r.stdout.strip()
 
 
@@ -109,45 +109,53 @@ def stop_all():
 data1 = tempfile.mkdtemp(prefix="remindo-live-")
 env1 = make_env(data1)
 try:
-    # ── the quick input, the way the hotkey opens it ──
+    # ── the quick input: the native window inside the daemon, opened through the daemon's own hotkey handler ──
     d1 = start_daemon(env1)
     area = cursor_monitor_work()
-    time.sleep(1.0)
-    print("daemon memory (KB):", memory(d1.pid), "| cursor monitor work area:", area)
-    before = {w[0] for w in windows()}
-    t0 = time.time()
-    ipc(env1, "new")
-    seen = None
-    while time.time() - t0 < 8:
-        ws = [w for w in windows() if w[0] not in before]
-        if ws:
-            seen = ws[0]
-            break
-        time.sleep(0.02)
-    check("the quick input opens", seen is not None)
-    if seen:
-        t_open = time.time() - t0
-        time.sleep(1.0)
-        rect = [w for w in windows() if w[0] == seen[0]][0][2]
-        cx, cy = rect[0] + rect[2] / 2, rect[1] + rect[3] / 2
-        check("it opens within half a second", t_open < 0.5, f"{t_open:.2f}s")
-        check("it is on the monitor with the cursor, horizontally centred", abs(cx - (area[0] + area[2] / 2)) <= 2 and area[1] <= cy <= area[1] + area[3], f"{rect}")
-        check("the focus lands in it (foreground process is the popup)", foreground_pid() == seen[0])
-        check("it is 520x126 at 100% scale", rect[2:] in ((520, 126), (650, 158), (780, 189)), f"{rect[2:]}")
-        ipc(env1, "new")
-        time.sleep(1.0)
-        check("a second 'new' never opens a second popup", len({w[0] for w in windows()} - before) == 1)
-        subprocess.run(["taskkill", "/PID", str(seen[0]), "/F"], capture_output=True)
-        time.sleep(0.5)
+    time.sleep(1.5)
+    print("daemon memory with the native popup created (KB):", memory(d1.pid), "| cursor monitor work area:", area)
+    dwin = u.FindWindowW("RemindoDaemonWindow", None)
+    def daemon_windows():
+        return [w for w in windows() if w[0] == d1.pid and w[2][2] > 100]
+    qi = u.FindWindowW("RemindoQuickInput", None)
+    times = []
+    for i in range(5):
+        t0 = time.perf_counter()
+        u.PostMessageW(dwin, 0x0312, 1, 0)  # WM_HOTKEY to our own daemon window (not a global key press)
+        while time.perf_counter() - t0 < 3:
+            if u.IsWindowVisible(qi) and u.GetForegroundWindow() == qi:
+                break
+            time.sleep(0.0005)
+        times.append((time.perf_counter() - t0) * 1000)
+        if i == 0:
+            time.sleep(0.5)
+            ws = daemon_windows()
+            rect = ws[0][2] if ws else (0, 0, 0, 0)
+            cx, cy = rect[0] + rect[2] / 2, rect[1] + rect[3] / 2
+            check("the quick input is on the monitor with the cursor, horizontally centred", abs(cx - (area[0] + area[2] / 2)) <= 2 and area[1] <= cy <= area[1] + area[3], f"{rect}")
+            check("it is 520x126 at 100% scale", rect[2:] in ((520, 126), (650, 158), (780, 189)), f"{rect[2:]}")
+            u.PostMessageW(dwin, 0x0312, 1, 0)
+            time.sleep(0.5)
+            check("a second hotkey press never opens a second window", len(daemon_windows()) == 1)
+            check("the window is topmost", bool(u.GetWindowLongW(ws[0][1], -20) & 8))
+        # close it again with Escape (sent to our own window only, after a PID check)
+        if foreground_pid() == d1.pid:
+            ki = ctypes.windll.user32.keybd_event
+            ki(0x1B, 0, 0, 0); ki(0x1B, 0, 2, 0)
+        time.sleep(0.4)
+    print("hotkey to focused window, ms:", [round(t, 1) for t in times])
+    check("hotkey to focused input is under 50 ms (median)", sorted(times)[2] < 50, f"{sorted(times)[2]:.1f} ms")
+    check("the popup is hidden after Escape", len(daemon_windows()) == 0)
+    print("daemon memory after showing it five times (KB):", memory(d1.pid))
 
     # ── `remindo --new` (what a Wayland shortcut runs) ──
-    before = {w[0] for w in windows()}
     subprocess.run([exe, "--new"], env=env1, timeout=15)
-    time.sleep(1.5)
-    check("--new opens the quick input through the running daemon", len({w[0] for w in windows()} - before) == 1)
-    for w in windows():
-        if w[0] not in before:
-            subprocess.run(["taskkill", "/PID", str(w[0]), "/F"], capture_output=True)
+    time.sleep(1.0)
+    check("--new opens the quick input through the running daemon", len(daemon_windows()) == 1)
+    if foreground_pid() == d1.pid:
+        ki = ctypes.windll.user32.keybd_event
+        ki(0x1B, 0, 0, 0); ki(0x1B, 0, 2, 0)
+    time.sleep(0.4)
 
     # ── a timer that fires ──
     ipc(env1, "text", "in 3 seconds", "stove")
