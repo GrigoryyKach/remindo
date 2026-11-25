@@ -35,6 +35,8 @@ const TIMER_SHOT: usize = 99;
 static POPUP: AtomicIsize = AtomicIsize::new(0);
 static EDIT: AtomicIsize = AtomicIsize::new(0);
 static OLD_EDIT: AtomicIsize = AtomicIsize::new(0);
+/// DWM draws the rounded corners, border and shadow (Windows 11); otherwise a window region is the fallback.
+static DWM_ROUND: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 static SHOT: Mutex<Option<(String, String)>> = Mutex::new(None);
 
 #[derive(Clone)]
@@ -111,6 +113,10 @@ pub fn init() {
         let old = SetWindowLongPtrW(edit, GWLP_WNDPROC, edit_proc as *const () as isize);
         OLD_EDIT.store(old, Ordering::Relaxed);
         EDIT.store(edit as isize, Ordering::Relaxed);
+        // Windows 11: antialiased rounded corners, the system border and shadow.
+        let pref: u32 = 2; // DWMWCP_ROUND
+        let ok = windows_sys::Win32::Graphics::Dwm::DwmSetWindowAttribute(hwnd, 33, &pref as *const u32 as *const _, 4) == 0;
+        DWM_ROUND.store(ok, Ordering::Relaxed);
         POPUP.store(hwnd as isize, Ordering::Relaxed);
     }
 }
@@ -135,7 +141,8 @@ fn ensure_fonts(scale: f32) {
     let fonts = [
         make_font("IBM Plex Sans", px(18.0, scale)),
         make_font("IBM Plex Sans", px(13.5, scale)),
-        make_font("IBM Plex Sans Medium", px(14.0, scale)),
+        // The embedded Medium file names its family "IBM Plex Sans Medm" (GDI limits it to 31 characters).
+        make_font("IBM Plex Sans Medm", px(14.0, scale)),
         make_font("IBM Plex Mono", px(12.0, scale)),
         make_font("IBM Plex Sans", px(12.5, scale)),
     ];
@@ -222,7 +229,13 @@ unsafe fn layout(hwnd: HWND, edit: HWND, scale: f32) {
     let r = px(16.0, scale);
     // SAFETY: GDI objects created and handed over (the region is owned by the window afterwards).
     unsafe {
-        SetWindowRgn(hwnd, CreateRoundRectRgn(0, 0, w + 1, h + 1, r * 2, r * 2), 1);
+        if DWM_ROUND.load(Ordering::Relaxed) {
+            // border colour for the DWM frame (DWMWA_BORDER_COLOR)
+            let c = rgb(Pal::of(st().dark).line_hi);
+            windows_sys::Win32::Graphics::Dwm::DwmSetWindowAttribute(hwnd, 34, &c as *const u32 as *const _, 4);
+        } else {
+            SetWindowRgn(hwnd, CreateRoundRectRgn(0, 0, w + 1, h + 1, r * 2, r * 2), 1);
+        }
         // The text line's optical centre (between cap height and x-height) sits on the centre of the field.
         let dc = GetDC(std::ptr::null_mut());
         let old = SelectObject(dc, st().fonts[0] as _);
@@ -511,7 +524,13 @@ unsafe fn draw(dc: HDC, w: i32, h: i32, edit_empty: bool, text: &str) {
     let rc = |l: f32, t: f32, r: f32, b: f32| RECT { left: px(l, sc), top: px(t, sc), right: px(r, sc), bottom: px(b, sc) };
     // SAFETY: GDI drawing into a DC we own.
     unsafe {
-        round_rect(dc, RECT { left: 0, top: 0, right: w, bottom: h }, px(16.0, sc), pal.card, Some(pal.line_hi));
+        if DWM_ROUND.load(Ordering::Relaxed) {
+            let b = CreateSolidBrush(rgb(pal.card));
+            FillRect(dc, &RECT { left: 0, top: 0, right: w, bottom: h }, b);
+            DeleteObject(b as _);
+        } else {
+            round_rect(dc, RECT { left: 0, top: 0, right: w, bottom: h }, px(16.0, sc), pal.card, Some(pal.line_hi));
+        }
         // The input field and the clock.
         round_rect(dc, rc(13.0, 13.0, W - 13.0, 53.0), px(10.0, sc), pal.input, Some(pal.line_hi));
         let (cx, cy) = (px(33.0, sc), px(33.0, sc));
