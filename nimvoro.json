@@ -1,0 +1,136 @@
+{
+  "schema": 1,
+  "id": "remindo",
+  "name": "Remindo",
+  "tagline": "Quick timers from a hotkey",
+  "description": "Press a shortcut, type \"in 15 minutes turn off the stove\" and press Enter. A small window pops up when the time comes. Remindo understands plain text in English, Russian and Ukrainian, mixed: \"1h15m - stove\", \"через полчаса позвонить\", \"завтра о 9\", \"at 6 pm\". It lives in the tray, keeps your timers across restarts and reboots, and works offline. No account, no cloud.",
+  "features": [
+    {
+      "title": "Type it the way you say it",
+      "text": "\"in 15 min call mom\", \"через 2 часа выключить духовку\", \"за півгодини нагадай\", \"1ч15м - плита\", \"tomorrow at 9\". The parser is rules, not a model: it works offline and gives the same answer every time."
+    },
+    {
+      "title": "A live preview",
+      "text": "While you type, one line shows what was understood: the length, the note and the exact time it will fire, for example \"1 h 15 min · «stove» · at 19:42\". A time that already passed today is set for tomorrow, and the preview says so."
+    },
+    {
+      "title": "Hard to miss, easy to ignore",
+      "text": "A small window on the monitor with your cursor shows the note, with Close, Repeat and +5 min. It does not take the keyboard from the program in front, and several timers that fire together stack neatly."
+    },
+    {
+      "title": "Never lose a timer",
+      "text": "Timers are stored with absolute times: they survive a restart, a reboot and sleep. A timer that came due while Remindo was closed fires at start, marked as missed."
+    },
+    {
+      "title": "Everything in one list",
+      "text": "Active timers with a live countdown, +5 min, edit and cancel; the last 50 timers with Start again; a shortcut recorder that tells you when another program already has the key."
+    },
+    {
+      "title": "Light and private",
+      "text": "A tiny background process with a tray icon draws nothing. The windows are separate and close when you are done. Everything stays on this computer, and there is a soft built-in chime you can switch off."
+    }
+  ],
+  "category": "Productivity",
+  "accent": [
+    "#f5cf3f",
+    "#916400"
+  ],
+  "icon": "assets/icon.png",
+  "screenshots": [
+    "assets/screenshots/dark-en-popup.png",
+    "assets/screenshots/dark-en-timers.png",
+    "assets/screenshots/dark-en-alerts.png",
+    "assets/screenshots/dark-en-settings.png"
+  ],
+  "exe": "Remindo.exe",
+  "asset": "Remindo-win-x64.zip",
+  "platforms": [
+    "windows",
+    "linux"
+  ],
+  "requirements": [
+    "Windows 10/11 x64"
+  ],
+  "linux": {
+    "asset": "Remindo-linux-x64.tar.gz",
+    "exe": "remindo",
+    "requirements": "Linux x86_64 with an X11 session (the global shortcut; on Wayland bind a system shortcut to \"remindo --new\"), GTK 3 and libayatana-appindicator3 (tray icon; GNOME also needs the AppIndicator extension), xdg-utils, and paplay, pw-play or aplay for the sound"
+  },
+  "settingsDir": "%APPDATA%\\Remindo",
+  "i18n": {
+    "ru": {
+      "tagline": "Быстрые таймеры по горячей клавише",
+      "description": "Нажмите сочетание клавиш, введите «через 15 минут выключить плиту» и нажмите Enter. Когда придёт время, появится маленькое окно. Remindo понимает обычный текст на русском, украинском и английском, даже вперемешку: «1ч15м - плита», «через полчаса позвонить», «завтра в 9», «at 6 pm». Он живёт в трее, хранит таймеры между перезапусками и перезагрузками и работает без интернета. Без аккаунта и облака.",
+      "category": "Продуктивность",
+      "features": [
+        {
+          "title": "Пишите, как говорите",
+          "text": "«через 15 мин позвонить маме», «через 2 часа выключить духовку», «за півгодини нагадай», «1ч15м - плита», «завтра в 9». Разбор текста построен на правилах, а не на модели: он работает без интернета и всегда даёт один и тот же ответ."
+        },
+        {
+          "title": "Живой предпросмотр",
+          "text": "Пока вы печатаете, одна строка показывает, что понято: длительность, заметка и точное время срабатывания, например «1 ч 15 мин · «плита» · в 19:42». Время, которое сегодня уже прошло, ставится на завтра, и предпросмотр об этом говорит."
+        },
+        {
+          "title": "Трудно пропустить, легко закрыть",
+          "text": "Маленькое окно на мониторе с курсором показывает заметку и кнопки «Закрыть», «Повторить» и «+5 мин». Оно не забирает клавиатуру у программы впереди, а несколько одновременных таймеров аккуратно выстраиваются в стопку."
+        },
+        {
+          "title": "Таймеры не пропадают",
+          "text": "Таймеры хранятся с абсолютным временем: они переживают перезапуск, перезагрузку и сон. Таймер, время которого пришло, пока Remindo был закрыт, срабатывает при запуске с пометкой о пропуске."
+        },
+        {
+          "title": "Всё в одном списке",
+          "text": "Активные таймеры с живым отсчётом, «+5 мин», правка и отмена; последние 50 таймеров с кнопкой «Запустить снова»; запись сочетания клавиш, которая скажет, если клавиша уже занята другой программой."
+        },
+        {
+          "title": "Лёгкий и приватный",
+          "text": "Крошечный фоновый процесс со значком в трее ничего не рисует. Окна запускаются отдельно и закрываются, когда вы закончили. Всё остаётся на этом компьютере, а тихий встроенный сигнал можно выключить."
+        }
+      ],
+      "requirements": [
+        "Windows 10/11 x64"
+      ],
+      "linux": {
+        "requirements": "Linux x86_64 с сеансом X11 (глобальное сочетание клавиш; в Wayland назначьте системное сочетание на «remindo --new»), GTK 3 и libayatana-appindicator3 (значок в трее; в GNOME нужно расширение AppIndicator), xdg-utils, а для звука paplay, pw-play или aplay"
+      }
+    },
+    "uk": {
+      "tagline": "Швидкі таймери за гарячою клавішею",
+      "description": "Натисніть скорочення, введіть «через 15 хвилин вимкнути плиту» й натисніть Enter. Коли прийде час, з'явиться маленьке вікно. Remindo розуміє звичайний текст українською, російською та англійською, навіть упереміш: «1год15хв - плита», «через півгодини зателефонувати», «завтра о 9», «at 6 pm». Він живе в треї, зберігає таймери між перезапусками та перезавантаженнями й працює без інтернету. Без акаунта та хмари.",
+      "category": "Продуктивність",
+      "features": [
+        {
+          "title": "Пишіть, як говорите",
+          "text": "«через 15 хв зателефонувати мамі», «через 2 години вимкнути духовку», «за півгодини нагадай», «1год15хв - плита», «завтра о 9». Розбір тексту побудований на правилах, а не на моделі: він працює без інтернету й завжди дає однакову відповідь."
+        },
+        {
+          "title": "Живий попередній перегляд",
+          "text": "Поки ви друкуєте, один рядок показує, що зрозуміло: тривалість, нотатку й точний час спрацювання, наприклад «1 год 15 хв · «плита» · о 19:42». Час, що сьогодні вже минув, ставиться на завтра, і перегляд про це каже."
+        },
+        {
+          "title": "Важко пропустити, легко закрити",
+          "text": "Маленьке вікно на моніторі з курсором показує нотатку та кнопки «Закрити», «Повторити» і «+5 хв». Воно не забирає клавіатуру в програми попереду, а кілька одночасних таймерів акуратно складаються в стос."
+        },
+        {
+          "title": "Таймери не зникають",
+          "text": "Таймери зберігаються з абсолютним часом: вони переживають перезапуск, перезавантаження й сон. Таймер, чий час настав, поки Remindo був закритий, спрацьовує під час запуску з позначкою про пропуск."
+        },
+        {
+          "title": "Усе в одному списку",
+          "text": "Активні таймери з живим відліком, «+5 хв», редагування та скасування; останні 50 таймерів із кнопкою «Запустити знову»; запис скорочення, який скаже, якщо клавішу вже зайняла інша програма."
+        },
+        {
+          "title": "Легкий і приватний",
+          "text": "Крихітний фоновий процес зі значком у треї нічого не малює. Вікна запускаються окремо й закриваються, коли ви закінчили. Усе лишається на цьому комп'ютері, а тихий вбудований сигнал можна вимкнути."
+        }
+      ],
+      "requirements": [
+        "Windows 10/11 x64"
+      ],
+      "linux": {
+        "requirements": "Linux x86_64 із сеансом X11 (глобальне скорочення; у Wayland призначте системне скорочення на «remindo --new»), GTK 3 і libayatana-appindicator3 (значок у треї; у GNOME потрібне розширення AppIndicator), xdg-utils, а для звуку paplay, pw-play або aplay"
+      }
+    }
+  }
+}

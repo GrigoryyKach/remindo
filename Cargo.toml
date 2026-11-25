@@ -1,0 +1,41 @@
+[package]
+name = "remindo"
+version = "1.0.0"
+edition = "2021"
+build = "build.rs"
+description = "Quick timers from a hotkey: type \"in 15 minutes turn off the stove\" and get a reminder"
+
+[[bin]]
+name = "Remindo"
+path = "src/main.rs"
+
+[dependencies]
+chrono = { version = "0.4.45", default-features = false, features = ["clock", "std", "serde"] }
+dirs = "7.0.0"
+eframe = { version = "0.37.0", default-features = false, features = ["default_fonts", "glow", "clipboard", "links"] }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.154"
+tray-icon = { version = "0.26.1", default-features = false }
+image = { version = "0.25", default-features = false, features = ["png"] }
+
+[target.'cfg(windows)'.dependencies]
+winreg = "0.56.0"
+windows-sys = { version = "0.61.2", features = [
+    "Win32_Foundation", "Win32_System_Threading", "Win32_UI_WindowsAndMessaging", "Win32_Security",
+    "Win32_UI_Input_KeyboardAndMouse", "Win32_System_SystemInformation",
+    "Win32_Graphics_Gdi", "Win32_System_LibraryLoader", "Win32_UI_HiDpi",
+    "Win32_Storage_FileSystem", "Win32_System_Pipes", "Win32_System_IO", "Win32_Media_Audio",
+] }
+
+[target.'cfg(unix)'.dependencies]
+eframe = { version = "0.37.0", default-features = false, features = ["x11", "wayland"] }
+libc = "0.2"
+gtk = "0.18"
+tray-icon = { version = "0.26.1", default-features = false, features = ["libappindicator"] }
+x11rb = { version = "0.13", features = ["randr"] }
+
+[profile.release]
+opt-level = 3
+strip = true
+lto = true
+codegen-units = 1
